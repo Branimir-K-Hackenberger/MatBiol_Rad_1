@@ -1,0 +1,131 @@
+
+---
+title: "Analyzing Results of Earthworm Population Dynamics"
+author: "Your Name"
+output:
+  pdf_document:
+    latex_engine: xelatex
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Analyzing Results of Earthworm Population Dynamics
+
+## Introduction
+Analyzing simulation results is crucial for understanding earthworm population stability and identifying environmental thresholds where populations either collapse or thrive. This chapter focuses on two key aspects of result analysis: fitness trait distribution over time and phase transitions under varying environmental conditions.
+
+## Simulation Initialization
+
+### Initialize Population and Transition Matrix
+```{r population-simulation, include=TRUE}
+# Parameters for simulation
+n_states <- 5  # Number of fitness states
+n_steps <- 50  # Number of time steps
+initial_population <- c(50, 30, 10, 5, 5)  # Initial distribution across states
+
+# Transition matrix (example)
+P <- matrix(c(
+  0.6, 0.3, 0.1, 0.0, 0.0,
+  0.2, 0.5, 0.2, 0.1, 0.0,
+  0.1, 0.3, 0.4, 0.2, 0.0,
+  0.0, 0.2, 0.3, 0.4, 0.1,
+  0.0, 0.0, 0.1, 0.3, 0.6
+), nrow = n_states, byrow = TRUE)
+
+# Simulate population dynamics
+population <- matrix(0, nrow = n_steps, ncol = n_states)
+population[1, ] <- initial_population
+
+for (t in 2:n_steps) {
+  population[t, ] <- population[t - 1, ] %*% P
+}
+```
+
+## Population Stability Analysis
+
+### Fitness Trait Distribution Over Time
+Population stability can be assessed by tracking how individuals are distributed across fitness categories over time. A stable population will exhibit minimal fluctuations in fitness distributions, while instability may result in significant shifts or oscillations.
+
+#### Mathematical Representation
+Let \(N_i(t)\) represent the population size in fitness category \(S_i\) at time \(t\). The proportion of the population in each category is:
+\[
+P_i(t) = \frac{N_i(t)}{\sum_{j=1}^n N_j(t)},
+\]
+where \(n\) is the total number of fitness categories. Stability can be quantified using the variance of these proportions over time:
+\[
+\text{Var}(P_i) = \frac{1}{T} \sum_{t=1}^T (P_i(t) - \bar{P_i})^2,
+\]
+where \(\bar{P_i}\) is the mean proportion of category \(S_i\) over the simulation duration \(T\).
+
+### R Implementation
+```{r stability-analysis, echo=TRUE}
+# Calculate proportions for each fitness category
+total_population <- rowSums(population)
+proportions <- sweep(population, 1, total_population, FUN = "/")
+
+# Calculate variance for each category
+variances <- apply(proportions, 2, var)
+
+# Plot proportions over time
+matplot(1:n_steps, proportions, type = "l", lty = 1, col = 1:n_states,
+        xlab = "Time Steps", ylab = "Proportion of Population",
+        main = "Fitness Trait Distribution Over Time")
+legend("topright", legend = paste("State", 1:n_states), col = 1:n_states, lty = 1)
+```
+
+## Phase Transition Analysis
+
+### Identifying Critical Environmental Conditions
+Phase transitions occur when small changes in environmental conditions lead to large-scale shifts in population dynamics, such as collapse or rapid growth.
+
+#### Example: Critical pH Threshold
+The critical thresholds for soil pH can be identified by gradually varying pH and recording the resulting population size:
+\[
+N(t) = f(\text{pH}) = N_0 \cdot e^{-k \cdot |\text{pH} - \text{pH}_{\text{opt}}|},
+\]
+where \(k\) determines sensitivity to deviations from the optimal pH.
+
+### R Implementation
+```{r phase-transitions, echo=TRUE}
+# Parameters for bifurcation analysis
+pH_values <- seq(5, 9, by = 0.1)
+population_sizes <- numeric(length(pH_values))
+
+# Simulate population sizes for varying pH
+for (i in seq_along(pH_values)) {
+  pH <- pH_values[i]
+  fitness <- exp(-0.1 * abs(pH - 7))  # Environmental fitness factor
+  modified_P <- P * fitness
+  modified_P <- sweep(modified_P, 1, rowSums(modified_P), FUN = "/")
+  population_sim <- initial_population
+  for (t in 1:n_steps) {
+    population_sim <- population_sim %*% modified_P
+  }
+  population_sizes[i] <- sum(population_sim)
+}
+
+# Plot bifurcation diagram
+plot(pH_values, population_sizes, type = "b", pch = 16, col = "blue",
+     xlab = "Soil pH", ylab = "Total Population Size",
+     main = "Bifurcation Analysis for Soil pH")
+abline(v = c(6, 8), col = "red", lty = 2)  # Example critical thresholds
+```
+
+## Applications and Implications
+
+### Population Stability
+- Variance analysis helps identify whether populations are stable under given conditions or are prone to fluctuations.
+
+### Environmental Management
+- Bifurcation points provide actionable insights into critical environmental thresholds, aiding in habitat conservation and soil management strategies.
+
+### Climate Resilience
+- Understanding phase transitions can guide predictions of how earthworm populations respond to extreme environmental changes, such as droughts or pollution events.
+
+## Conclusion
+Analyzing the results of population simulations provides valuable insights into the dynamics of earthworm populations. By examining fitness distributions and identifying phase transitions, we can better understand stability and resilience, informing ecological management and conservation efforts.
+```
+

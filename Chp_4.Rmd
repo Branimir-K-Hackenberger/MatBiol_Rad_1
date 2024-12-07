@@ -1,0 +1,149 @@
+---
+title: "Adapting Environmental Variables for Earthworm Population Models"
+author: "Your Name"
+output:
+  pdf_document:
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Adapting Environmental Variables for Earthworm Population Models
+
+## Introduction
+Environmental variables such as soil pH, moisture, and temperature significantly influence earthworm fitness, survival, and reproduction. This chapter integrates these spatial and temporal variables into population models, allowing for dynamic simulation of habitat variations and their impacts on earthworm populations.
+
+## Defining Environmental Variables
+
+### Key Environmental Factors
+1. **Soil pH (\(\text{pH}\))**:
+   - Affects enzyme activity, nutrient availability, and survival rates.
+   - Modeled as a continuous variable influencing fitness \(F\):
+     \[
+     F_{\text{pH}} = \frac{1}{1 + e^{-k_1 (\text{pH} - \text{pH}_{\text{opt}})}},
+     \]
+     where \(k_1\) controls the sensitivity to deviations from optimal pH \(\text{pH}_{\text{opt}}\).
+
+2. **Soil Moisture (\(M\))**:
+   - Influences respiration and mobility.
+   - Fitness dependency modeled as:
+     \[
+     F_{M} = e^{-k_2 (M - M_{\text{opt}})^2},
+     \]
+     where \(M_{\text{opt}}\) is the optimal moisture level, and \(k_2\) controls the penalty for deviations.
+
+3. **Temperature (\(T\))**:
+   - Governs metabolic rates and reproductive success.
+   - Modeled using a Gaussian function:
+     \[
+     F_{T} = e^{-k_3 (T - T_{\text{opt}})^2},
+     \]
+     where \(T_{\text{opt}}\) is the optimal temperature, and \(k_3\) determines sensitivity.
+
+### Combined Environmental Fitness Function
+The combined fitness function incorporating all environmental factors is:
+\[
+F_{\text{env}} = F_{\text{pH}} \cdot F_{M} \cdot F_{T}.
+\]
+This product reflects the multiplicative influence of each variable on overall fitness.
+
+## Dynamic Environmental Changes
+
+### Temporal Dynamics
+Environmental variables vary over time due to seasonal changes or anthropogenic factors. These dynamics are modeled as:
+1. **Periodic Variations** (e.g., seasonal temperature changes):
+   \[
+   T(t) = T_{\text{avg}} + A_T \cdot \sin(\omega t + \phi),
+   \]
+   where:
+   - \(T_{\text{avg}}\): Average temperature.
+   - \(A_T\): Amplitude of seasonal fluctuation.
+   - \(\omega\): Angular frequency.
+   - \(\phi\): Phase offset.
+
+2. **Stochastic Perturbations** (e.g., rainfall variability):
+   \[
+   M(t) = M_{\text{det}}(t) + \epsilon(t),
+   \]
+   where \(\epsilon(t)\) is a noise term drawn from a normal distribution \(N(0, \sigma^2)\).
+
+### Spatial Variability
+Spatial heterogeneity is introduced through environmental gradients:
+\[
+\text{pH}(x, y) = \text{pH}_{\text{avg}} + \nabla \text{pH} \cdot (x + y),
+\]
+where \(\nabla \text{pH}\) represents the gradient in soil pH across spatial coordinates \(x, y\).
+
+## Modeling Population Dynamics Under Environmental Variation
+
+### Modified Birth-Death Model
+Environmental fitness \(F_{\text{env}}\) modifies survival and reproduction probabilities:
+1. Survival probability for stage \(i\):
+   \[
+   p_i(t) = p_{i, 0} \cdot F_{\text{env}}(t),
+   \]
+   where \(p_{i, 0}\) is the baseline survival probability.
+
+2. Reproduction rate:
+   \[
+   r_a(t) = r_{a, 0} \cdot F_{\text{env}}(t),
+   \]
+   where \(r_{a, 0}\) is the baseline reproduction rate.
+
+### Simulation Framework
+Simulate the effects of environmental variables on population dynamics:
+```{r simulation, echo=TRUE}
+# Parameters
+n_steps <- 100
+x_coords <- seq(0, 10, length.out = 100)
+y_coords <- seq(0, 10, length.out = 100)
+time <- 1:n_steps
+
+# Environmental parameters
+pH_opt <- 7
+M_opt <- 0.3
+T_opt <- 20
+k1 <- 1
+k2 <- 10
+k3 <- 10
+
+# Initialize fitness grids
+pH <- outer(x_coords, y_coords, function(x, y) pH_opt + 0.1 * (x + y))
+moisture <- M_opt + rnorm(length(x_coords) * length(y_coords), mean = 0, sd = 0.05)
+temperature <- T_opt + 5 * sin(2 * pi * time / n_steps)
+
+# Fitness calculation
+fitness_env <- function(pH, M, T) {
+  F_pH <- 1 / (1 + exp(-k1 * (pH - pH_opt)))
+  F_M <- exp(-k2 * (M - M_opt)^2)
+  F_T <- exp(-k3 * (T - T_opt)^2)
+  F_pH * F_M * F_T
+}
+
+# Simulate fitness over time
+fitness <- array(NA, dim = c(length(x_coords), length(y_coords), n_steps))
+for (t in time) {
+  fitness[,,t] <- fitness_env(pH, moisture, temperature[t])
+}
+
+# Visualize fitness at final time step
+image(x_coords, y_coords, fitness[,,n_steps], main = "Fitness Landscape", xlab = "X", ylab = "Y", col = heat.colors(100))
+```
+
+## Applications and Implications
+
+### Climate Change Scenarios
+The model predicts how gradual shifts in temperature or moisture affect population dynamics, providing insights into potential range expansions or contractions.
+
+### Soil Management Practices
+By simulating spatial variability, the model identifies areas requiring intervention, such as pH adjustments or irrigation.
+
+### Conservation Efforts
+Temporal dynamics help forecast population resilience under fluctuating environmental conditions, aiding conservation planning.
+
+## Conclusion
+Incorporating environmental variables into population models enhances their ecological realism. This approach provides a powerful tool for predicting earthworm population responses to dynamic habitats, informing sustainable management and conservation efforts.
+```
+

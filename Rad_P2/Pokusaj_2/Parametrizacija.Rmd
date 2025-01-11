@@ -1,0 +1,169 @@
+---
+title: "Parameterization and Evolutionary Dynamics in Earthworm Models"
+output:
+  pdf_document:
+    number_sections: true
+    toc: true
+---
+
+## Introduction
+
+Earthworms (*Lumbricidae*) play a crucial role in soil ecosystems, influencing physical, chemical, and biological soil properties. Their survival, reproduction, and overall fitness are closely linked to environmental factors, such as soil moisture and temperature, which directly affect their activity and population dynamics. In this document, we enhance the existing parameterized model by incorporating stochastic birth-death-mutant dynamics inspired by evolutionary models.
+
+## Survival Rates in Different Soil Conditions
+
+The survival of earthworms is highly dependent on soil moisture. Water constitutes 75–90% of the earthworm's body mass, making water retention vital for their survival (Roots, 1956). Low soil moisture negatively impacts growth and survival, while excessive moisture reduces activity and survival rates. Earthworms mitigate unfavorable moisture conditions by migrating to deeper soil layers or entering estivation. For instance, *Lumbricus terrestris* can lose up to 70% of its total body water and still survive (Roots, 1956).
+
+Let the survival probability of earthworms be defined as:
+\[
+P_s = \alpha \cdot M + \beta \cdot T,
+\]
+where:
+- \(M\): soil moisture,
+- \(T\): soil temperature,
+- \(\alpha\) and \(\beta\): constants derived from experimental data.
+
+Survival diminishes significantly when \(M\) or \(T\) exceed optimal ranges, introducing threshold values \(M_{\text{crit}}\) and \(T_{\text{crit}}\) beyond which \(P_s\) approaches zero.
+
+## Reproduction and Cocoon Production Rates
+
+Earthworms are hermaphrodites that reproduce sexually by exchanging sperm. After mating, fertilized eggs are deposited in cocoons from which young earthworms develop. Reproductive cycles and cocoon production rates depend on species and environmental conditions. For example, in *Lumbricus terrestris*, copulation occurs on the soil surface, typically every 7–11 days. Sperm storage can last up to 8 months, enabling cocoon production for up to 12 months post-mating (Butt & Nuutinen, 1998; Michiels et al., 2001).
+
+The cocoon production rate can be modeled as:
+\[
+R_c = \gamma \cdot A(t) \cdot \exp(-\delta \cdot T),
+\]
+where:
+- \(R_c\): number of cocoons produced,
+- \(A(t)\): number of active adults at time \(t\),
+- \(\gamma\): reproduction rate constant,
+- \(\delta\): temperature sensitivity constant,
+- \(T\): soil temperature.
+
+## Stochastic Dynamics of Birth, Death, and Mutation
+
+We incorporate a stochastic framework for earthworm population dynamics, inspired by evolutionary models:
+
+### 1. **Birth Process**
+The probability of a new individual being born into a fitness class \(f_i\) is proportional to the current population size of individuals with fitness \(f_i\):
+\[
+P(\text{birth in } f_i) = \frac{n_i(t)}{\sum_j n_j(t)},
+\]
+where \(n_i(t)\) is the population size of individuals with fitness \(f_i\) at time \(t\), and \(\sum_j n_j(t)\) is the total population.
+
+### 2. **Mutation Process**
+With probability \(r\), a mutant is born with fitness drawn uniformly from \([0, 1]\):
+\[
+f_{\text{new}} = \begin{cases} 
+U[0,1], & \text{with probability } r, \\
+f_{\text{parent}}, & \text{otherwise}.
+\end{cases}
+\]
+
+### 3. **Death Process**
+The death process removes individuals from the fitness class with the smallest population:
+\[
+P(\text{death in } f_k) = \frac{1}{n_k(t)},
+\]
+where \(n_k(t) = \min\{n_i(t)\}\). If multiple classes share the minimum, one is chosen randomly.
+
+### Transition Equations
+The population dynamics for each fitness class can be expressed as:
+\[
+n_i(t+1) = \begin{cases} 
+n_i(t) + 1, & \text{if birth occurs in } f_i, \\
+n_i(t) - 1, & \text{if death occurs in } f_i, \\
+n_i(t), & \text{otherwise}.
+\end{cases}
+\]
+
+## Influence of Environmental Factors on Fitness
+
+The fitness of earthworms can be expressed as:
+\[
+F = \phi(T, M) = \max\left(0, 1 - \frac{(T - T_{\text{opt}})^2}{T_{\text{opt}}^2} - \frac{(M - M_{\text{opt}})^2}{M_{\text{opt}}^2}\right),
+\]
+where:
+- \(T_{\text{opt}}\): optimal temperature,
+- \(M_{\text{opt}}\): optimal soil moisture,
+- \(\phi(T, M)\): fitness function representing the survival probability as a function of \(T\) and \(M\).
+
+## References
+
+Butt, K. R., & Nuutinen, V. (1998). Reproduction of the earthworm Lumbricus terrestris Linné after the first mating. Canadian Journal of Zoology, 76(6), 1040-1045. https://doi.org/10.1139/z97-179
+
+Edwards, C. A., & Bohlen, P. J. (1996). Biology and Ecology of Earthworms (3rd ed.). Springer. https://doi.org/10.1007/978-1-4613-5859-9
+
+Holmstrup, M., & Overgaard, J. (2007). Freeze tolerance in Aporrectodea caliginosa and other earthworms from Finland. Cryobiology, 55(1), 80-86. https://doi.org/10.1016/j.cryobiol.2007.05.004
+
+Michiels, N. K., Hohner, A., & Vorndran, I. C. (2001). Precopulatory mate assessment in relation to body size in the earthworm Lumbricus terrestris: avoidance of dangerous liaisons? Behavioral Ecology, 12(5), 612-618. https://doi.org/10.1093/beheco/12.5.612
+
+Perreault, J. M., & Whalen, J. K. (2006). Earthworm burrowing in laboratory microcosms as influenced by soil temperature and moisture. Pedobiologia, 50(5-6), 397-403. https://doi.org/10.1016/j.pedobi.2006.08.001
+
+Roots, B. I. (1956). The water relations of earthworms. II. Resistance to desiccation and immersion, and behaviour when submerged and when allowed a choice of environment. Journal of Experimental Biology, 33(1), 29-44. https://doi.org/10.1242/jeb.33.1.29
+
+Uvarov, A. V., Scheu, S., & Setälä, H. (2011). Effects of earthworms on microbial community structure during decomposition of fresh and dried pine litter. Soil Biology and Biochemistry, 43(4), 647-655. https://doi.org/10.1016/j.soilbio.2010.12.005
+
+
+
+
+
+
+
+
+
+
+## R Implementation
+
+```{r Implementation, echo=TRUE, warning=FALSE, message=FALSE}
+# Initialize parameters
+set.seed(42)
+t_steps <- 100  # Time steps
+lambda <- 5      # Birth rate
+r <- 0.1         # Mutation probability
+n_classes <- 50  # Fitness classes
+
+# Initialize populations
+pop <- rep(10, n_classes)  # Initial population in each class
+fitness <- seq(0, 1, length.out = n_classes)
+
+# Environmental factors
+T_opt <- 20; M_opt <- 0.3
+phi <- function(T, M) {
+  1 - ((T - T_opt)^2 / T_opt^2) - ((M - M_opt)^2 / M_opt^2)
+}
+
+# Simulation loop
+for (t in 1:t_steps) {
+  # Birth process
+  births <- rpois(1, lambda * sum(pop))
+  new_births <- sample(1:n_classes, births, prob = pop, replace = TRUE)
+
+  # Mutation process
+  mutants <- runif(births) < r
+  new_fitness <- fitness[new_births]
+  new_fitness[mutants] <- runif(sum(mutants))
+
+  # Update populations with births
+  for (i in 1:n_classes) {
+    pop[i] <- pop[i] + sum(new_births == i)
+  }
+
+  # Death process
+  deaths <- sample(1:n_classes, size = sum(pop), prob = 1 / (pop + 1), replace = TRUE)
+  for (i in 1:n_classes) {
+    pop[i] <- max(0, pop[i] - sum(deaths == i))
+  }
+}
+
+# Plot results
+library(ggplot2)
+data <- data.frame(Time = rep(1:t_steps, n_classes), Fitness = rep(fitness, each = t_steps), Population = as.vector(t(pop)))
+
+ggplot(data, aes(x = Time, y = Population, fill = Fitness)) +
+  geom_area() +
+  labs(title = "Population Dynamics by Fitness Class", x = "Time", y = "Population") +
+  theme_minimal()
+```
+
+

@@ -1,0 +1,132 @@
+---
+title: "Formulacija Modela Evolucije Podvrsta Gujavica"
+output: pdf_document
+---
+
+## Uvod
+
+Ovaj dokument detaljno opisuje formulaciju modela evolucije podvrsta gujavica temeljenog na stohastičkom modelu iz članka "On a model of evolution of subspecies." Prilagodba uključuje biološke aspekte gujavica, uključujući faze razvoja, fitness funkciju i specifične stope reprodukcije, mutacija i smrti.
+
+## 1. Definicija modela
+
+Model koristi diskretne vremenske korake gdje se događaji rođenja, mutacija i smrti događaju s određenim vjerojatnostima. Fitness parametar ($f$) predstavlja sposobnost preživljavanja i reprodukcije jedinke, pri čemu su gujavice podijeljene u tri razvojne faze:
+
+- **Faza 1**: Jaja ($E$)
+- **Faza 2**: Mlade jedinke ($J$)
+- **Faza 3**: Odrasle jedinke ($A$)
+
+Svaka faza ima specifične stope prijelaza i preživljavanja.
+
+## 2. Formalizacija prijelaza
+
+Neka $n$ označava trenutni vremenski korak. Broj jedinki u svakoj fazi označavamo kao:
+- $E_n$: broj jaja
+- $J_n$: broj mladih jedinki
+- $A_n$: broj odraslih jedinki
+
+Stohastički proces definiran je slijedećim pravilima:
+
+### a) Rođenje
+- Pri svakom koraku $n$, broj novih jaja $B_n$ generira se prema reprodukcijskoj stopi odraslih jedinki:
+  \[
+  B_n \sim \text{Poisson}(\lambda A_n),
+  \]
+  gdje je $\lambda$ prosječna stopa polaganja jaja po odrasloj jedinki.
+
+### b) Mutacija
+- Svako jaje može mutirati s vjerojatnošću $r$, dajući novu fitness vrijednost iz intervala $[0,1]$. Ako nema mutacije, fitness je naslijeđen:
+  \[
+  f_{\text{novi}} = \begin{cases} 
+  U[0,1], & \text{s vjerojatnošću } r, \\
+  f_{\text{roditelj}}, & \text{inače.}
+  \end{cases}
+  \]
+
+### c) Preživljavanje i prijelaz između faza
+- Stope preživljavanja ovise o fitnessu:
+  - Jaja preživljavaju do mladih jedinki s vjerojatnošću $s_E(f)$.
+  - Mlade jedinke prelaze u odrasle s vjerojatnošću $s_J(f)$.
+  - Odrasle jedinke preživljavaju s vjerojatnošću $s_A(f)$.
+
+Prijelazne jednadžbe su:
+\[
+E_{n+1} = B_n,
+\]
+\[
+J_{n+1} = \sum_{i=1}^{E_n} \text{Bernoulli}(s_E(f_i)),
+\]
+\[
+A_{n+1} = \sum_{j=1}^{J_n} \text{Bernoulli}(s_J(f_j)) + \sum_{k=1}^{A_n} \text{Bernoulli}(s_A(f_k)).
+\]
+
+### d) Smrt
+- Jedinke s najmanjim fitnessom imaju veću vjerojatnost smrtnosti. Smrt odraslih jedinki modelirana je stohastičkom funkcijom:
+\[
+P(\text{smrt} | f) \propto \frac{1}{f + \epsilon},
+\]
+gdje je $\epsilon$ mali pozitivni parametar koji sprječava dijeljenje s nulom.
+
+## 3. Simulacija u R-u
+
+Sljedeći kod implementira opisani model:
+
+```r
+# Inicijalizacija parametara
+set.seed(42)
+t_steps <- 100  # Broj vremenskih koraka
+lambda <- 5      # Stopa polaganja jaja
+r <- 0.1         # Vjerojatnost mutacije
+s_E <- function(f) 0.8 * f          # Stopa preživljavanja jaja
+s_J <- function(f) 0.6 * f          # Stopa prijelaza mladih
+s_A <- function(f) 0.9 * f          # Stopa preživljavanja odraslih
+
+epsilon <- 0.01  # Parametar za smrtnost
+
+# Inicijalizacija populacije
+E <- J <- A <- vector("list", t_steps)
+E[[1]] <- runif(50, 0.2, 0.8)  # Početna jaja
+J[[1]] <- numeric()
+A[[1]] <- runif(10, 0.5, 1)    # Početne odrasle jedinke
+
+# Simulacija
+for (t in 1:(t_steps - 1)) {
+  # Rođenje
+  B <- rpois(1, lambda * length(A[[t]]))
+  new_eggs <- runif(B, 0, 1)  # Fitness novih jaja
+  
+  # Mutacija
+  mut <- runif(B) < r
+  new_eggs[mut] <- runif(sum(mut), 0, 1)
+  
+  # Preživljavanje jaja
+  survived_eggs <- new_eggs[runif(length(new_eggs)) < s_E(new_eggs)]
+  
+  # Preživljavanje mladih
+  survived_juveniles <- J[[t]][runif(length(J[[t]])) < s_J(J[[t]])]
+  
+  # Preživljavanje odraslih
+  survived_adults <- A[[t]][runif(length(A[[t]])) < s_A(A[[t]])]
+  
+  # Ažuriranje populacije
+  E[[t + 1]] <- survived_eggs
+  J[[t + 1]] <- survived_juveniles
+  A[[t + 1]] <- c(survived_adults, survived_juveniles[runif(length(survived_juveniles)) < 0.5])
+}
+
+# Vizualizacija rezultata
+library(ggplot2)
+pop_sizes <- data.frame(
+  Time = rep(1:t_steps, each = 3),
+  Stage = rep(c("Eggs", "Juveniles", "Adults"), times = t_steps),
+  Count = c(sapply(E, length), sapply(J, length), sapply(A, length))
+)
+
+ggplot(pop_sizes, aes(x = Time, y = Count, color = Stage)) +
+  geom_line(size = 1) +
+  labs(title = "Populacijska dinamika gujavica", x = "Vrijeme", y = "Broj jedinki") +
+  theme_minimal()
+```
+
+## Zaključak
+
+Ova formalizacija i simulacija omogućuju analizu dinamike evolucije podvrsta gujavica. Model se može proširiti uključivanjem specifičnih okolišnih faktora i međusobne interakcije jedinki.

@@ -1,0 +1,115 @@
+---
+title: "A Stochastic Model of Earthworm Population Evolution"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Abstract
+Earthworms play a critical role in soil ecosystems, contributing to nutrient cycling, soil structure, and carbon sequestration. Understanding their population dynamics under environmental and evolutionary pressures is crucial for ecological modeling and conservation. This paper implements a stochastic birth-death model, incorporating mutation and preferential attachment mechanisms, to study earthworm population evolution. Our findings reveal the interplay between mutation-driven variability and fitness-based reproduction, shedding light on population resilience and adaptation.
+
+# Introduction
+Earthworms, often referred to as "ecosystem engineers," are essential for maintaining soil health and fertility. They influence critical processes such as nutrient cycling, organic matter decomposition, soil aeration, and carbon sequestration, making their population dynamics pivotal for both natural and agricultural ecosystems (Edwards & Bohlen, 1996; Lavelle & Spain, 2001). Despite their ecological importance, earthworm populations are under constant threat from environmental changes, pollution, and habitat loss. These stressors necessitate the development of robust, predictive models that can capture the complexity of earthworm population dynamics.
+
+## Importance of Modeling Earthworm Populations
+The ecological roles of earthworms are intricately tied to their population dynamics. Variability in population traits, such as reproduction rate and stress resistance, determines the resilience of earthworm communities to environmental perturbations. By modeling these dynamics, we can:
+- Assess the impact of environmental changes on soil health.
+- Predict population trends under various ecological scenarios.
+- Inform conservation strategies and sustainable agricultural practices.
+
+Mathematically, earthworm populations can be represented as systems of interacting agents with fitness values \(F_i\) that evolve over time. Fitness encapsulates traits such as reproduction efficiency, survival under stress, and resource utilization. The evolution of fitness is driven by stochastic processes of birth, mutation, and death.
+
+# The Model
+
+## Overview of the Modeling Framework
+The earthworm population model is grounded in stochastic processes, combining birth-death dynamics with mutation and preferential attachment. This framework enables the study of population traits over time, accounting for ecological variability and evolutionary pressures.
+
+### Parameters of the Model
+Key parameters define the population's initial conditions and the rules governing its evolution:
+- **Birth probability \(p\):** The likelihood of a new individual entering the population at each time step.
+- **Mutation probability \(r\):** The chance that a newly born individual exhibits a novel fitness value.
+- **Fitness values \(F_i\):** Represent traits that influence survival and reproduction, such as resource acquisition efficiency and environmental adaptability.
+- **Population size \(N_i\):** The number of individuals at a specific fitness level \(F_i\).
+
+### Evolutionary Rules
+1. **Birth Process:**
+   - At each time step, an individual is born with probability \(p\).
+   - If a mutation occurs (probability \(r\)), the individual is assigned a fitness value \(F_{\text{mut}}\) sampled uniformly from \([0,1]\):
+     \[
+     F_{\text{mut}} \sim U(0,1).
+     \]
+   - If no mutation occurs, the fitness is chosen based on preferential attachment. The probability of selecting a fitness level \(F_j\) is proportional to its current population size \(N_j\):
+     \[
+     P(F_j) = \frac{N_j}{\sum_{k} N_k}.
+     \]
+
+2. **Death Process:**
+   - Individuals die with probability \(1 - p\).
+   - The least fit individual (minimum \(F_i\)) is preferentially removed:
+     \[
+     \text{Remove individual from } \arg\min_j(F_j).
+     \]
+
+### Time Evolution
+The population evolves over discrete time steps, following the sequence of birth and death events. At each step, the total population size and the distribution of fitness values are updated, reflecting the combined effects of mutation, reproduction, and selection.
+
+## Theoretical Implications
+The model captures key dynamics of earthworm populations:
+- **Mutation:** Introduces genetic variability, enabling populations to explore new ecological niches.
+- **Preferential Attachment:** Stabilizes populations by favoring individuals with higher fitness.
+- **Natural Selection:** Ensures adaptation to environmental constraints by removing less fit individuals.
+
+These dynamics reflect the balance between exploration (via mutation) and exploitation (via preferential attachment), which determines population resilience and adaptability.
+
+## Related Work
+This model builds on foundational concepts in evolutionary biology and stochastic processes:
+- **Bak and Sneppen (1993):** Demonstrated self-organized criticality in evolutionary dynamics.
+- **Ben-Ari and Schinazi (2016):** Highlighted phase transitions in populations with high mutation rates.
+- **Guiol, Machado, and Schinazi (2010):** Explored spatial ecological models with mutation and selection.
+
+### Applications
+The insights gained from this model can inform practical applications, including:
+- Predicting earthworm population responses to environmental changes.
+- Assessing the impact of agricultural practices on soil health.
+- Designing conservation strategies to protect key ecosystem services provided by earthworms.
+
+# Appendix: R Implementation
+The following R code implements the described stochastic model. This code is structured for flexibility, allowing users to adjust parameters and initial conditions to explore various scenarios.
+
+```{r simulation-function, eval=FALSE}
+simulate_population <- function(initial_population, n_steps, p, r) {
+  population <- initial_population
+  results <- list()
+
+  for (t in 1:n_steps) {
+    if (runif(1) < p) {
+      # Birth event
+      if (runif(1) < r) {
+        # Mutation: New fitness value
+        new_fitness <- runif(1)
+        population <- population %>% add_row(fitness = new_fitness, size = 1)
+      } else {
+        # Preferential attachment
+        total_size <- sum(population$size)
+        probabilities <- population$size / total_size
+        chosen <- sample(seq_len(nrow(population)), size = 1, prob = probabilities)
+        population$size[chosen] <- population$size[chosen] + 1
+      }
+    } else {
+      # Death event
+      least_fit <- which.min(population$fitness)
+      if (population$size[least_fit] > 1) {
+        population$size[least_fit] <- population$size[least_fit] - 1
+      } else {
+        population <- population[-least_fit, ]
+      }
+    }
+    results[[t]] <- population
+  }
+  results
+}
+```

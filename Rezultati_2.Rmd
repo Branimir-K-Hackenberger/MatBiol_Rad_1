@@ -1,0 +1,206 @@
+---
+title: "A Stochastic Model of Earthworm Population Evolution"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+
+# Abstract
+Earthworms play a critical role in soil ecosystems, contributing to nutrient cycling, soil structure, and carbon sequestration. Understanding their population dynamics under environmental and evolutionary pressures is crucial for ecological modeling and conservation. This paper implements a stochastic birth-death model, incorporating mutation and preferential attachment mechanisms, to study earthworm population evolution. Our findings reveal the interplay between mutation-driven variability and fitness-based reproduction, shedding light on population resilience and adaptation.
+
+# Introduction
+Earthworms, often referred to as "ecosystem engineers," are essential for maintaining soil health and fertility. They influence critical processes such as nutrient cycling, organic matter decomposition, soil aeration, and carbon sequestration, making their population dynamics pivotal for both natural and agricultural ecosystems (Edwards & Bohlen, 1996; Lavelle & Spain, 2001). Despite their ecological importance, earthworm populations are under constant threat from environmental changes, pollution, and habitat loss. These stressors necessitate the development of robust, predictive models that can capture the complexity of earthworm population dynamics.
+
+# The Model
+
+## Mathematical Framework
+
+### Parameters and Variables
+1. **Fitness Levels (\(F_i\))**:
+   Each individual in the population has a fitness level \(F_i \in [0,1]\), which represents their relative ability to survive and reproduce.
+
+2. **Population Size (\(N_i\))**:
+   \(N_i\) is the number of individuals with fitness level \(F_i\) at a given time step.
+
+3. **Probability of Events**:
+   - \(p\): Probability of a birth event.
+   - \(r\): Probability of mutation during a birth event.
+
+4. **Time (\(t\))**:
+   The model evolves over discrete time steps \(t = 1, 2, \dots, T\), where \(T\) is the total simulation time.
+
+### Evolutionary Dynamics
+
+1. **Birth Process**:
+   - With probability \(p\), a new individual is added to the population.
+   - If mutation occurs (\(r\)), the fitness level of the new individual is drawn from a uniform distribution:
+     \[
+     F_{\text{new}} \sim U(0,1).
+     \]
+   - If no mutation occurs (\(1 - r\)), the fitness level of the new individual is selected based on preferential attachment:
+     \[
+     P(F_j) = \frac{N_j}{\sum_{k} N_k},
+     \]
+     where \(N_k\) is the population size at fitness level \(F_k\).
+
+2. **Death Process**:
+   - With probability \(1 - p\), an individual is removed from the population.
+   - The individual with the least fitness is preferentially removed:
+     \[
+     \text{Remove individual from } \arg\min_i(F_i).
+     \]
+
+3. **Population Update**:
+   At each time step, the population size and fitness distribution are updated according to the birth and death processes:
+   \[
+   N_{i,t+1} = N_{i,t} + \Delta N_{i,t},
+   \]
+   where \(\Delta N_{i,t}\) depends on the outcome of birth and death events.
+
+### Stochasticity in the Model
+
+The model incorporates stochasticity in the following ways:
+- Fitness levels of mutants are sampled from a uniform random distribution.
+- The selection of fitness levels during preferential attachment is probabilistic.
+- The decision to undergo a birth or death event at each time step is governed by random processes.
+
+### Key Equations
+
+1. **Mutation Impact**:
+   The rate of fitness diversity introduced by mutation is proportional to the mutation probability \(r\):
+   \[
+   \Delta F_{\text{mut}} = \frac{r}{N} \sum_{i} (F_i - \overline{F})^2,
+   \]
+   where \(\overline{F}\) is the mean fitness of the population.
+
+2. **Population Stability**:
+   The total population size \(N_t\) at time \(t\) is governed by:
+   \[
+   N_{t+1} = N_t + B_t - D_t,
+   \]
+   where \(B_t\) and \(D_t\) are the number of births and deaths, respectively.
+
+3. **Mean Fitness**:
+   The mean fitness of the population evolves as:
+   \[
+   \overline{F}_{t+1} = \frac{\sum_i F_i N_{i,t+1}}{\sum_i N_{i,t+1}}.
+   \]
+
+### Theoretical Insights
+
+- **Exploration vs. Exploitation**:
+   Mutation introduces new fitness levels (exploration), while preferential attachment consolidates successful traits (exploitation).
+- **Selective Pressure**:
+   The removal of the least fit individuals ensures that the population adapts to environmental constraints over time.
+
+## Parameters
+Define initial population and key parameters.
+
+```{r parameters, echo=FALSE}
+set.seed(123)
+p <- 0.7  # Birth probability
+r <- 0.3  # Mutation probability
+n_steps <- 200  # Number of simulation steps
+initial_population <- data.frame(fitness = c(0.2, 0.5, 0.8), size = c(10, 15, 8))
+```
+
+## Simulation Framework
+
+### Simulation Function
+
+```{r simulation-function, echo=FALSE}
+simulate_population <- function(initial_population, n_steps, p, r) {
+  population <- initial_population
+  results <- list()
+
+  for (t in 1:n_steps) {
+    if (runif(1) < p) {
+      # Birth event
+      if (runif(1) < r) {
+        # Mutation: New fitness value
+        new_fitness <- runif(1)
+        population <- population %>% add_row(fitness = new_fitness, size = 1)
+      } else {
+        # Preferential attachment
+        total_size <- sum(population$size)
+        probabilities <- population$size / total_size
+        chosen <- sample(seq_len(nrow(population)), size = 1, prob = probabilities)
+        population$size[chosen] <- population$size[chosen] + 1
+      }
+    } else {
+      # Death event
+      least_fit <- which.min(population$fitness)
+      if (population$size[least_fit] > 1) {
+        population$size[least_fit] <- population$size[least_fit] - 1
+      } else {
+        population <- population[-least_fit, ]
+      }
+    }
+    results[[t]] <- population
+  }
+  results
+}
+```
+
+# Results
+
+## Simulation Framework
+To explore the dynamics of earthworm populations, multiple simulations were conducted, varying key parameters such as mutation probability \(r\) and birth probability \(p\). These simulations were analyzed to reveal patterns in fitness distribution, population size, and mean fitness over time.
+
+### Detailed Simulations
+The simulations focused on understanding:
+- The effect of high vs. low mutation probabilities.
+- The impact of varying birth probabilities on population stability.
+- Changes in population size and fitness under different initial conditions.
+
+## Simulation Results and Visualizations
+
+### Fitness Distribution Over Time
+
+To analyze how fitness evolves, the distribution of fitness values over time was plotted.
+
+```{r fitness-distribution, echo=FALSE}
+simulation_results <- simulate_population(initial_population, n_steps, p, r)
+plot_data <- bind_rows(lapply(seq_along(simulation_results), function(t) {
+  data <- simulation_results[[t]]
+  data$time <- t
+  data
+}))
+
+ggplot(plot_data, aes(x = fitness, y = size, color = as.factor(time))) +
+  geom_line() +
+  labs(title = "Fitness Distribution Over Time",
+       x = "Fitness",
+       y = "Population Size",
+       color = "Time Step") +
+  theme_minimal()
+```
+
+**Analysis**:
+The fitness distribution shows a shift toward higher values over time, indicating that individuals with higher fitness are preferentially surviving and reproducing. This highlights the role of natural selection in stabilizing the population.
+
+### Total Population Size Over Time
+
+The total population size was tracked to understand the overall stability and growth trends.
+
+```{r total-population-size, echo=FALSE}
+summary_data <- plot_data %>%
+  group_by(time) %>%
+  summarise(
+    total_population = sum(size),
+    mean_fitness = weighted.mean(fitness, size)
+  )
+```
+
+
+

@@ -1,0 +1,161 @@
+---
+title: "A Stochastic Model of Earthworm Population Evolution"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Abstract
+Earthworms play a critical role in soil ecosystems, contributing to nutrient cycling, soil structure, and carbon sequestration. Understanding their population dynamics under environmental and evolutionary pressures is crucial for ecological modeling and conservation. This paper implements a stochastic birth-death model, incorporating mutation and preferential attachment mechanisms, to study earthworm population evolution. Our findings reveal the interplay between mutation-driven variability and fitness-based reproduction, shedding light on population resilience and adaptation.
+
+# Introduction
+Earthworm populations are vital for maintaining soil health and fertility. They influence nutrient availability, organic matter decomposition, and soil aeration, making them indispensable for sustainable agriculture and ecosystem functioning (Edwards & Bohlen, 1996; Lavelle & Spain, 2001). However, their populations are subject to environmental stressors such as pollution, habitat loss, and climate change, necessitating robust models to predict population trends and resilience.
+
+## Mathematical Framework
+The evolutionary dynamics of earthworm populations are modeled using a stochastic birth-death process:
+
+1. **Mutation:** Introduces genetic variability:
+   \[
+   F_i = F_0 + \Delta F,
+   \]
+   where \(F_0\) is baseline fitness and \(\Delta F\) represents changes due to mutation.
+
+2. **Birth Events:** Occur with probability \(p\), leading to:
+   - **Mutation:** With probability \(r\), a new fitness value is drawn from \([0,1]\).
+   - **Preferential Attachment:** Otherwise, fitness is assigned proportional to population size at each fitness level \(F_j\):
+     \[
+     P(F_j) \propto N_j.
+     \]
+
+3. **Death Events:** Occur with probability \(1-p\), removing individuals from the least fit group.
+
+This framework adapts principles from Guiol, Machado, and Schinazi (2010) and Ben-Ari and Schinazi (2016) to focus on earthworm populations.
+
+## Objectives
+This study aims to:
+- Simulate earthworm population dynamics under varying ecological conditions.
+- Analyze the effects of mutation and selection on population resilience.
+- Provide insights for soil health and conservation strategies.
+
+# The Model
+
+## Parameters
+Define initial population and key parameters.
+
+```{r parameters}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+set.seed(123)
+p <- 0.7  # Birth probability
+r <- 0.3  # Mutation probability
+n_steps <- 200  # Number of simulation steps
+initial_population <- data.frame(fitness = c(0.2, 0.5, 0.8), size = c(10, 15, 8))
+```
+
+## Simulation Framework
+
+### Rules
+1. Birth occurs with probability \(p\):
+   - With probability \(r\), a mutant is born.
+   - Otherwise, fitness is assigned by preferential attachment.
+2. Death occurs with probability \(1-p\), targeting the least fit group.
+
+### Implementation
+
+```{r simulation-function}
+simulate_population <- function(initial_population, n_steps, p, r) {
+  population <- initial_population
+  results <- list()
+
+  for (t in 1:n_steps) {
+    if (runif(1) < p) {
+      if (runif(1) < r) {
+        # Mutation: New fitness level uniformly in [0, 1]
+        new_fitness <- runif(1)
+        population <- population %>% add_row(fitness = new_fitness, size = 1)
+      } else {
+        # Preferential attachment
+        total_size <- sum(population$size)
+        probabilities <- population$size / total_size
+        chosen <- sample(seq_len(nrow(population)), size = 1, prob = probabilities)
+        population$size[chosen] <- population$size[chosen] + 1
+      }
+    } else {
+      # Death: Remove from least fit group
+      least_fit <- which.min(population$fitness)
+      if (population$size[least_fit] > 1) {
+        population$size[least_fit] <- population$size[least_fit] - 1
+      } else {
+        population <- population[-least_fit, ]
+      }
+    }
+    results[[t]] <- population
+  }
+
+  results
+}
+```
+
+# Results
+
+## Simulation
+
+```{r run-simulation}
+simulation_results <- simulate_population(initial_population, n_steps, p, r)
+plot_data <- bind_rows(lapply(seq_along(simulation_results), function(t) {
+  data <- simulation_results[[t]]
+  data$time <- t
+  data
+}))
+```
+
+## Visualizations
+
+### Fitness Distribution Over Time
+
+```{r plot-fitness-distribution}
+ggplot(plot_data, aes(x = fitness, y = size, color = as.factor(time))) +
+  geom_line() +
+  labs(title = "Fitness Distribution Over Time",
+       x = "Fitness",
+       y = "Population Size",
+       color = "Time Step") +
+  theme_minimal()
+```
+
+### Population Size
+
+```{r plot-population-size}
+summary_data <- plot_data %>%
+  group_by(time) %>%
+  summarise(total_population = sum(size),
+            mean_fitness = weighted.mean(fitness, size))
+
+ggplot(summary_data, aes(x = time, y = total_population)) +
+  geom_line() +
+  labs(title = "Total Population Over Time",
+       x = "Time Step",
+       y = "Population Size") +
+  theme_minimal()
+```
+
+# Discussion
+
+The simulation highlights key aspects of earthworm population dynamics:
+- **Mutation and Adaptation:** High mutation rates promote diversity, aiding adaptation to environmental changes.
+- **Selection and Resilience:** Preferential attachment fosters population stability by favoring fitter individuals.
+
+# Conclusion
+This model offers a quantitative framework for studying earthworm populations, aiding conservation and soil management efforts. Future work could integrate environmental factors, such as soil type and climate, to enhance predictions.
+
+# References
+- Edwards, C. A., & Bohlen, P. J. (1996). *Biology and Ecology of Earthworms.* Springer.
+- Lavelle, P., & Spain, A. V. (2001). *Soil Ecology.* Kluwer Academic Publishers.
+- Guiol, H., Machado, F. P., & Schinazi, R. (2010). Phase transitions for a spatial ecological model. *Journal of Statistical Physics, 141*(4), 604–612.
+- Ben-Ari, I., & Schinazi, R. (2016). A stochastic model for virus-like evolving populations. *Journal of Mathematical Biology, 73*(5), 1231–1244.

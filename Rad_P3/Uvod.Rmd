@@ -1,0 +1,106 @@
+---
+title: "Modeliranje evolucije populacija gujavica"
+author: "Vaše Ime"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    keep_tex: true
+header-includes:
+  - \usepackage{amsmath}
+  - \usepackage{amssymb}
+  - \usepackage{graphicx}
+---
+
+# Uvod
+
+Evolucija i dinamika populacija temeljni su fenomeni u biologiji, ekologiji i evolucijskoj teoriji. Gujavice (*Oligochaeta*) igraju ključnu ulogu u ekosustavima, posebno u procesima poput razgradnje organske tvari, stvaranja humusa i povećanja plodnosti tla. Unatoč njihovoj važnosti, detaljno razumijevanje dinamike populacije gujavica pod utjecajem evolucijskih procesa, poput mutacija i prirodne selekcije, još uvijek je ograničeno. U ovom radu, prilagođujemo stohastički model evolucije podvrsta (Roy & Tanemura, 2019) kako bismo istražili dinamiku populacije gujavica i njihovu prilagodbu specifičnim uvjetima okoliša.
+
+## Matematički okvir modela
+
+Model se temelji na sljedećim osnovnim procesima:
+
+1. **Rođenje**: Nova jedinka može biti mutant ili može naslijediti fitness od postojeće populacije.
+2. **Mutacija**: Nova jedinka dobiva nasumičnu vrijednost fitnessa u intervalu \([0, 1]\).
+3. **Smrt**: Jedinke s najnižim fitnessom imaju najvišu vjerojatnost smrtnosti.
+
+### Formalni opis modela
+
+Neka je populacija u trenutku \(n\) opisana skupom:
+\[
+X_n = \{(k_i, f_i) : k_i \geq 1, f_i \in [0, 1], i = 1, \dots, l \},
+\]
+gdje je \(k_i\) veličina populacije na fitness razini \(f_i\), a \(l\) ukupan broj razina fitnessa u populaciji.
+
+Ukupna populacija u trenutku \(n\) dana je:
+\[
+N_n = \sum_{i=1}^l k_i.
+\]
+
+#### Proces rođenja
+S vjerojatnošću \(p\) dolazi do rođenja nove jedinke. Nova jedinka može:
+1. Biti mutant s fitness parametrom \(f \sim U(0,1)\) (uniformna distribucija).
+2. Naslijediti fitness \(f_i\) od postojeće populacije s vjerojatnošću proporcionalnom veličini populacije na toj razini fitnessa:
+\[
+P(f = f_i) = \frac{k_i}{N_n}, \quad i = 1, \dots, l.
+\]
+
+#### Proces smrti
+S vjerojatnošću \(1-p\) dolazi do smrti jedinke. Jedinka na fitness razini s najmanjim \(f\) ima najveću vjerojatnost za smrtnost:
+\[
+P(smrtnost|f_i) \propto \frac{1}{f_i}.
+\]
+
+Uklanja se jedna jedinka iz populacije s najmanjim fitnessom.
+
+#### Fazni prijelaz
+Model pokazuje fazni prijelaz definiran kritičnom vrijednošću fitnessa \(f_c\):
+\[
+f_c = \frac{1-p}{pr},
+\]
+gdje:
+- Ako \(f < f_c\), populacija na toj razini fitnessa povremeno izumire.
+- Ako \(f > f_c\), populacija raste i koncentrira se u intervalu \([f_c, 1]\).
+
+### Markovljev opis
+Proces \(X_n\) je Markovljev lanac s prijelaznim vjerojatnostima:
+- Ako \(X_n = \{(k, f)\}\):
+  \[
+  P(X_{n+1} = \{(k+1, f)\} | X_n) = p \cdot r \cdot U(f),
+  \]
+  gdje je \(U(f)\) uniformna distribucija.
+- Ako je \(X_n = \emptyset\), populacija se ponovno pokreće nasumičnim fitnessom.
+
+### Proširenje modela za gujavice
+Za modeliranje populacija gujavica, dodaju se specifične biološke karakteristike:
+1. **Faze životnog ciklusa**: Kokoni, mlade jedinke, odrasle jedinke.
+2. **Reproduktivna dinamika**: Samo odrasle jedinke pridonose populaciji kroz rođenje novih jedinki.
+3. **Ekološki faktori**: Utjecaj kvalitete tla i temperature na fitness.
+
+Dodaju se dodatni parametri kao što su:
+- Stopa prelaska iz faze kokona u mladu jedinku (\gamma).
+- Stopa reprodukcije odraslih jedinki (\beta).
+
+Evolucija svake faze opisana je sustavom diferencijalnih jednadžbi:
+\[
+\begin{align*}
+\frac{dC}{dt} &= -\gamma C, \\
+\frac{dJ}{dt} &= \gamma C - \delta J, \\
+\frac{dA}{dt} &= \beta A - \mu A,
+\end{align*}
+\]
+gdje su:
+- \(C\): broj kokona,
+- \(J\): broj mladih jedinki,
+- \(A\): broj odraslih jedinki,
+- \(\gamma\): stopa prelaska u mlade jedinke,
+- \(\delta\): smrtnost mladih jedinki,
+- \(\mu\): smrtnost odraslih jedinki.
+
+### Ciljevi rada
+Glavni ciljevi ovog rada su:
+1. Prilagoditi opisani model za simulaciju populacije gujavica.
+2. Identificirati uvjete pod kojima populacija ostaje stabilna ili izumire.
+3. Istražiti distribuciju fitnessa u populaciji tijekom vremena.
+
+Simulacije će biti provedene u programskom jeziku R, a rezultati će obuhvaćati analizu dinamike populacije, distribuciju fitnessa i dugoročnu stabilnost populacije. Svi dijelovi koda bit će priloženi u dodatnim materijalima.
+

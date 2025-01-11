@@ -1,0 +1,134 @@
+---
+title: "Parametrization of Earthworm Population Models"
+author: "User"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#  html_document:
+#    number_sections: false
+
+```
+
+## Introduction
+This document provides a detailed parameterization of population models for earthworms, focusing on **Lumbricus terrestris** and **Eisenia fetida**. The models incorporate survival rates, reproduction rates, and the influence of environmental factors such as soil moisture and temperature.
+
+## Model Framework
+The population dynamics are modeled using discrete time steps with parameters for survival, reproduction, and environmental influence.
+
+### Key Equations
+The population size $N_t$ at time $t$ is governed by:
+
+$$
+N_{t+1} = N_t \cdot S_t + B_t,
+$$
+
+where:
+- $S_t$ is the survival rate.
+- $B_t$ is the number of new individuals (births).
+
+The birth rate $B_t$ depends on reproduction rate $R$ and the number of mature individuals $M_t$:
+
+$$
+B_t = M_t \cdot R.
+$$
+
+Environmental factors (temperature $T$ and moisture $W$) modify $S_t$ and $R$:
+
+$$
+S_t = S_{base} \cdot \exp\left(-\alpha \cdot |T - T_{opt}|\right) \cdot \beta(W),
+$$
+
+$$
+R = R_{base} \cdot \gamma(T, W).
+$$
+
+## Parameters for Lumbricus terrestris
+
+### Survival Rates
+- Optimal temperature: $10-20^\circ C$.
+- Survival declines exponentially outside this range.
+
+Example:
+```{r}
+T_opt <- 15
+alpha <- 0.1
+T <- seq(0, 30, by = 1)
+S_base <- 0.95
+S_t <- S_base * exp(-alpha * abs(T - T_opt))
+plot(T, S_t, type = "l", xlab = "Temperature (°C)", ylab = "Survival Rate", main = "Survival Rate vs Temperature")
+```
+
+### Reproduction Rates
+- Average cocoon production: 2 per week per mature individual.
+- Hatching success: 50%.
+
+```{r}
+M_t <- 100 # Number of mature individuals
+R_base <- 2 # Cocoons per week
+hatching_success <- 0.5
+B_t <- M_t * R_base * hatching_success
+cat("Number of new individuals: ", B_t, "\n")
+```
+
+## Parameters for Eisenia fetida
+
+### Survival Rates
+- Optimal moisture: $60-80\%$.
+
+Example:
+```{r}
+W_opt <- 70
+beta <- function(W) {
+  if (W < 40 || W > 90) return(0.5)
+  if (W >= 60 && W <= 80) return(1)
+  return(0.75)
+}
+W <- seq(30, 100, by = 5)
+S_t <- sapply(W, beta)
+plot(W, S_t, type = "l", xlab = "Moisture (%)", ylab = "Survival Rate", main = "Survival Rate vs Moisture")
+```
+
+### Reproduction Rates
+- Cocoons per week: 3.
+- Hatching success: 80%.
+
+```{r}
+M_t <- 200 # Number of mature individuals
+R_base <- 3 # Cocoons per week
+hatching_success <- 0.8
+B_t <- M_t * R_base * hatching_success
+cat("Number of new individuals: ", B_t, "\n")
+```
+
+## Combined Model Simulation
+
+```{r}
+time <- 1:52 # Weeks
+N_t <- numeric(length(time))
+N_t[1] <- 100 # Initial population
+
+# Parameters
+S_base <- 0.9
+R_base <- 2
+T_opt <- 15
+alpha <- 0.1
+hatching_success <- 0.5
+T <- 15 + 10 * sin(2 * pi * time / 52) # Seasonal temperature variation
+
+for (t in 1:(length(time) - 1)) {
+  S_t <- S_base * exp(-alpha * abs(T[t] - T_opt))
+  B_t <- N_t[t] * R_base * hatching_success
+  N_t[t + 1] <- N_t[t] * S_t + B_t
+}
+
+plot(time, N_t, type = "l", xlab = "Time (weeks)", ylab = "Population Size", main = "Population Dynamics")
+```
+
+## Conclusion
+This document demonstrates a parameterized approach to modeling earthworm populations using environmental and biological parameters. Future refinements may include stochastic elements and data validation.

@@ -1,0 +1,178 @@
+---
+title: "Implementation of Evolution Model for Earthworms"
+author: "Adapted Framework"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+The study of earthworm population dynamics is critical for understanding their ecological roles, including soil fertility, nutrient cycling, and carbon sequestration. Evolutionary dynamics, particularly those involving mutation and preferential attachment, provide a framework for modeling population behaviors under environmental pressures. This document implements a stochastic birth-death model tailored to earthworms, integrating mathematical and ecological concepts for simulating their population dynamics.
+
+## Background
+Earthworm populations are influenced by ecological interactions, environmental stressors, and genetic variability. Mutation introduces variability in traits such as reproduction and stress resistance, while preferential attachment ensures that individuals with higher fitness contribute more significantly to the population.
+
+### Key Concepts
+1. **Mutation:** Mutations introduce variability by altering fitness values, such as reproduction rate or stress resistance. Mathematically, mutation can be expressed as:
+   \[
+   F_i = F_0 + \Delta F,
+   \]
+   where \(F_0\) is the baseline fitness, and \(\Delta F\) represents the fitness change due to mutation.
+
+2. **Birth and Preferential Attachment:** Birth events occur with probability \(p\). In the case of non-mutant births, fitness \(F_j\) is chosen proportional to the population size \(N_j\) at fitness level \(j\):
+   \[
+   P(F_j) \propto N_j.
+   \]
+
+3. **Death:** Death events occur with probability \(1 - p\), removing individuals from the least fit group to simulate "survival of the fittest."
+
+### Related Work
+The model implemented in this document builds on ecological and evolutionary principles:
+- **Edwards and Bohlen (1996):** Explored the biology and ecology of earthworms, providing foundational insights into their population dynamics.
+- **Lavelle and Spain (2001):** Highlighted the ecological roles of earthworms in nutrient cycling and soil structure.
+- **Curry and Schmidt (2007):** Reviewed earthworm responses to environmental stressors such as heavy metals and pesticides.
+
+## Objectives
+The primary goal of this implementation is to simulate the evolutionary dynamics of earthworm populations, incorporating:
+- Mutation-driven variability.
+- Preferential attachment mechanisms.
+- Birth-death stochastic processes.
+
+This model provides a quantitative framework for analyzing population behaviors under varying ecological and genetic scenarios, aiding in soil health assessments and conservation efforts.
+
+### References
+- Edwards, C. A., & Bohlen, P. J. (1996). *Biology and Ecology of Earthworms.* Springer.
+- Lavelle, P., & Spain, A. V. (2001). *Soil Ecology.* Kluwer Academic Publishers.
+- Curry, J. P., & Schmidt, O. (2007). The feeding ecology of earthworms – A review. *Pedobiologia, 50*(6), 463–477.
+
+# Parameters
+Set the key parameters for the simulation.
+
+```{r parameters}
+# Load libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Define parameters
+set.seed(123)
+p <- 0.6  # Probability of birth
+r <- 0.4  # Probability of mutation
+n_steps <- 100  # Number of time steps
+initial_population <- data.frame(fitness = c(0.3, 0.6, 0.9), size = c(10, 20, 5))
+```
+
+# Simulation Framework
+The simulation follows a discrete-time process with the following rules:
+
+1. **Birth**: With probability `p`, an individual is born.
+   - With probability `r`, the individual is a mutant with a random fitness value.
+   - Otherwise, preferential attachment determines its fitness.
+
+2. **Death**: With probability `1 - p`, the least fit individual dies.
+
+## Simulation Function
+Define a function to simulate the population dynamics over time.
+
+```{r simulation-function}
+simulate_population <- function(initial_population, n_steps, p, r) {
+  population <- initial_population
+  results <- list()
+
+  for (t in 1:n_steps) {
+    if (runif(1) < p) {
+      # Birth event
+      if (runif(1) < r) {
+        # Mutation: New fitness level uniformly in [0, 1]
+        new_fitness <- runif(1)
+        population <- population %>%
+          add_row(fitness = new_fitness, size = 1)
+      } else {
+        # Preferential attachment
+        total_size <- sum(population$size)
+        probabilities <- population$size / total_size
+        chosen <- sample(seq_len(nrow(population)), size = 1, prob = probabilities)
+        population$size[chosen] <- population$size[chosen] + 1
+      }
+    } else {
+      # Death event: Remove one individual from the least fit group
+      least_fit <- which.min(population$fitness)
+      if (population$size[least_fit] > 1) {
+        population$size[least_fit] <- population$size[least_fit] - 1
+      } else {
+        population <- population[-least_fit, ]
+      }
+    }
+
+    # Store the population state
+    results[[t]] <- population
+  }
+
+  results
+}
+```
+
+# Running the Simulation
+Simulate the evolution of the population using the defined parameters and function.
+
+```{r run-simulation}
+# Run simulation
+simulation_results <- simulate_population(initial_population, n_steps, p, r)
+
+# Prepare results for visualization
+plot_data <- bind_rows(lapply(seq_along(simulation_results), function(t) {
+  data <- simulation_results[[t]]
+  data$time <- t
+  data
+}))
+```
+
+# Visualization
+## Fitness Distribution Over Time
+Visualize how the fitness distribution evolves across the simulation timeline.
+
+```{r plot-fitness-distribution}
+ggplot(plot_data, aes(x = fitness, y = size, color = as.factor(time))) +
+  geom_line() +
+  labs(title = "Fitness Distribution Over Time",
+       x = "Fitness",
+       y = "Population Size",
+       color = "Time Step") +
+  theme_minimal()
+```
+
+## Population Dynamics
+### Total Population
+Plot the total population size over time.
+
+```{r plot-total-population}
+summary_data <- plot_data %>%
+  group_by(time) %>%
+  summarise(total_population = sum(size),
+            mean_fitness = weighted.mean(fitness, size))
+
+ggplot(summary_data, aes(x = time, y = total_population)) +
+  geom_line() +
+  labs(title = "Total Population Over Time",
+       x = "Time Step",
+       y = "Total Population") +
+  theme_minimal()
+```
+
+### Mean Fitness
+Plot the mean fitness of the population over time.
+
+```{r plot-mean-fitness}
+ggplot(summary_data, aes(x = time, y = mean_fitness)) +
+  geom_line() +
+  labs(title = "Mean Fitness Over Time",
+       x = "Time Step",
+       y = "Mean Fitness") +
+  theme_minimal()
+```
+
+# Conclusion
+This implementation provides a framework for simulating and visualizing the evolution of earthworm populations. The integration of mutation and preferential attachment mechanisms highlights key ecological dynamics, making this model relevant for soil health studies and conservation efforts.

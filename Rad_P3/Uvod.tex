@@ -1,0 +1,193 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Modeliranje evolucije populacija gujavica},
+  pdfauthor={Vaše Ime},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Modeliranje evolucije populacija gujavica}
+\author{Vaše Ime}
+\date{2024-12-09}
+
+\begin{document}
+\maketitle
+
+\section{Uvod}\label{uvod}
+
+Evolucija i dinamika populacija temeljni su fenomeni u biologiji,
+ekologiji i evolucijskoj teoriji. Gujavice (\emph{Oligochaeta}) igraju
+ključnu ulogu u ekosustavima, posebno u procesima poput razgradnje
+organske tvari, stvaranja humusa i povećanja plodnosti tla. Unatoč
+njihovoj važnosti, detaljno razumijevanje dinamike populacije gujavica
+pod utjecajem evolucijskih procesa, poput mutacija i prirodne selekcije,
+još uvijek je ograničeno. U ovom radu, prilagođujemo stohastički model
+evolucije podvrsta (Roy \& Tanemura, 2019) kako bismo istražili dinamiku
+populacije gujavica i njihovu prilagodbu specifičnim uvjetima okoliša.
+
+\subsection{Matematički okvir
+modela}\label{matematiux10dki-okvir-modela}
+
+Model se temelji na sljedećim osnovnim procesima:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Rođenje}: Nova jedinka može biti mutant ili može naslijediti
+  fitness od postojeće populacije.
+\item
+  \textbf{Mutacija}: Nova jedinka dobiva nasumičnu vrijednost fitnessa u
+  intervalu \([0, 1]\).
+\item
+  \textbf{Smrt}: Jedinke s najnižim fitnessom imaju najvišu vjerojatnost
+  smrtnosti.
+\end{enumerate}
+
+\subsubsection{Formalni opis modela}\label{formalni-opis-modela}
+
+Neka je populacija u trenutku \(n\) opisana skupom: \[
+X_n = \{(k_i, f_i) : k_i \geq 1, f_i \in [0, 1], i = 1, \dots, l \},
+\] gdje je \(k_i\) veličina populacije na fitness razini \(f_i\), a
+\(l\) ukupan broj razina fitnessa u populaciji.
+
+Ukupna populacija u trenutku \(n\) dana je: \[
+N_n = \sum_{i=1}^l k_i.
+\]
+
+\paragraph{Proces rođenja}\label{proces-roux111enja}
+
+S vjerojatnošću \(p\) dolazi do rođenja nove jedinke. Nova jedinka može:
+1. Biti mutant s fitness parametrom \(f \sim U(0,1)\) (uniformna
+distribucija). 2. Naslijediti fitness \(f_i\) od postojeće populacije s
+vjerojatnošću proporcionalnom veličini populacije na toj razini
+fitnessa: \[
+P(f = f_i) = \frac{k_i}{N_n}, \quad i = 1, \dots, l.
+\]
+
+\paragraph{Proces smrti}\label{proces-smrti}
+
+S vjerojatnošću \(1-p\) dolazi do smrti jedinke. Jedinka na fitness
+razini s najmanjim \(f\) ima najveću vjerojatnost za smrtnost: \[
+P(smrtnost|f_i) \propto \frac{1}{f_i}.
+\]
+
+Uklanja se jedna jedinka iz populacije s najmanjim fitnessom.
+
+\paragraph{Fazni prijelaz}\label{fazni-prijelaz}
+
+Model pokazuje fazni prijelaz definiran kritičnom vrijednošću fitnessa
+\(f_c\): \[
+f_c = \frac{1-p}{pr},
+\] gdje: - Ako \(f < f_c\), populacija na toj razini fitnessa povremeno
+izumire. - Ako \(f > f_c\), populacija raste i koncentrira se u
+intervalu \([f_c, 1]\).
+
+\subsubsection{Markovljev opis}\label{markovljev-opis}
+
+Proces \(X_n\) je Markovljev lanac s prijelaznim vjerojatnostima: - Ako
+\(X_n = \{(k, f)\}\): \[
+  P(X_{n+1} = \{(k+1, f)\} | X_n) = p \cdot r \cdot U(f),
+  \] gdje je \(U(f)\) uniformna distribucija. - Ako je
+\(X_n = \emptyset\), populacija se ponovno pokreće nasumičnim fitnessom.
+
+\subsubsection{Proširenje modela za
+gujavice}\label{proux161irenje-modela-za-gujavice}
+
+Za modeliranje populacija gujavica, dodaju se specifične biološke
+karakteristike: 1. \textbf{Faze životnog ciklusa}: Kokoni, mlade
+jedinke, odrasle jedinke. 2. \textbf{Reproduktivna dinamika}: Samo
+odrasle jedinke pridonose populaciji kroz rođenje novih jedinki. 3.
+\textbf{Ekološki faktori}: Utjecaj kvalitete tla i temperature na
+fitness.
+
+Dodaju se dodatni parametri kao što su: - Stopa prelaska iz faze kokona
+u mladu jedinku (\gamma). - Stopa reprodukcije odraslih jedinki (\beta).
+
+Evolucija svake faze opisana je sustavom diferencijalnih jednadžbi: \[
+\begin{align*}
+\frac{dC}{dt} &= -\gamma C, \\
+\frac{dJ}{dt} &= \gamma C - \delta J, \\
+\frac{dA}{dt} &= \beta A - \mu A,
+\end{align*}
+\] gdje su: - \(C\): broj kokona, - \(J\): broj mladih jedinki, - \(A\):
+broj odraslih jedinki, - \(\gamma\): stopa prelaska u mlade jedinke, -
+\(\delta\): smrtnost mladih jedinki, - \(\mu\): smrtnost odraslih
+jedinki.
+
+\subsubsection{Ciljevi rada}\label{ciljevi-rada}
+
+Glavni ciljevi ovog rada su: 1. Prilagoditi opisani model za simulaciju
+populacije gujavica. 2. Identificirati uvjete pod kojima populacija
+ostaje stabilna ili izumire. 3. Istražiti distribuciju fitnessa u
+populaciji tijekom vremena.
+
+Simulacije će biti provedene u programskom jeziku R, a rezultati će
+obuhvaćati analizu dinamike populacije, distribuciju fitnessa i
+dugoročnu stabilnost populacije. Svi dijelovi koda bit će priloženi u
+dodatnim materijalima.
+
+\end{document}
